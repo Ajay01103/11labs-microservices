@@ -1,0 +1,117 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: illvenn-course-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-illvenn}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-illvenn_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-illvenn}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-illvenn}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - illvenn-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: illvenn-course-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - illvenn-network
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: illvenn-course-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-illvenn}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-illvenn_dev}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - illvenn-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: illvenn-course-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-illvenn}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-illvenn_dev_secret}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - illvenn-network
+
+  minio-setup:
+    image: minio/mc:latest
+    container_name: illvenn-course-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+      mc mb myminio/$${MINIO_BUCKET} --ignore-existing;
+      mc anonymous set download myminio/$${MINIO_BUCKET}/public;
+      echo 'MinIO bucket ready.';
+      "
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-illvenn}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-illvenn_dev_secret}
+      MINIO_BUCKET: ${MINIO_BUCKET:-illvenn-audio}
+    networks:
+      - illvenn-network
+
+  traefik:
+    image: traefik:v3.2
+    container_name: illvenn-course-traefik
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./services/gateway/traefik.yaml:/etc/traefik/traefik.yml:ro
+      - ./services/gateway/dynamic.yaml:/etc/traefik/dynamic.yml:ro
+    networks:
+      - illvenn-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  rabbitmq-data:
+  minio-data:
+  # tts-models:
+
+networks:
+  illvenn-network:
+    driver: bridge
