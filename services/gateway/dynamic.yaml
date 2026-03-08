@@ -28,17 +28,17 @@ http:
     auth:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:3001"
+          - url: "http://${HOST_GATEWAY}:3001"
 
     voice:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:3002"
+          - url: "http://${HOST_GATEWAY}:3002"
 
     worker:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:3003"
+          - url: "http://${HOST_GATEWAY}:3003"
 
   middlewares:
     strip-api:

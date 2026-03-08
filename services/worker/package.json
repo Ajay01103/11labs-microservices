@@ -1,0 +1,37 @@
+{
+	"name": "@illvenn/worker",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "cross-env DOTENV_CONFIG_PATH=../../.env tsx watch src/server.ts",
+		"build": "tsc",
+		"start": "node dist/server.js",
+		"typecheck": "tsc --noEmit",
+		"clean": "rm -rf dist"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"packageManager": "pnpm@10.30.3",
+	"dependencies": {
+		"@aws-sdk/client-s3": "^3.1002.0",
+		"@aws-sdk/s3-request-presigner": "^3.1002.0",
+		"@fastify/cors": "^11.2.0",
+		"@fastify/jwt": "^10.0.0",
+		"@illvenn/db": "workspace:*",
+		"amqplib": "^0.10.9",
+		"cross-env": "^10.1.0",
+		"dotenv": "^17.3.1",
+		"drizzle-orm": "^0.45.1",
+		"fastify": "^5.7.4",
+		"fastify-plugin": "^5.1.0",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@types/amqplib": "^0.10.8",
+		"@types/node": "^25.3.3",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	}
+}
